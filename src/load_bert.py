@@ -1,6 +1,6 @@
 from re import M
 import torch
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer, AutoModel, AutoConfig
 import sys
 import logging
 import pandas as pd
@@ -48,7 +48,48 @@ class DataProcessing:
                     return_tensors='pt')
         self.tokens = tokens
         return self.tokens
-    
+
+    def get_layerwise_embeddings(self, layer, load_option='save'):
+        """
+            basically the same thing as get_bert_embedding, except returning the hidden states
+        """
+        load_path = '../data/pmb_'+self.standard+'/'+self.standard+'_'+self.dset+'_'+layer+'_emb.pt'
+
+        if load_option == 'load':
+            output_tensor = torch.load(load_path)
+        else:
+            input_seqs = self.tokens['input_ids']
+            input_mask = self.tokens['attention_mask']
+            model = AutoModel.from_pretrained('bert-base-uncased', output_hidden_states=True)
+            model = model.to(device)
+
+            ## batching data
+            data = TensorDataset(input_seqs, input_mask)
+            loader = DataLoader(data, batch_size=1000)
+
+            outputs = []
+            for param in model.parameters():
+                param.requires_grad = False
+            model.eval()
+
+            with torch.no_grad():
+                for word_ids, mask in loader:
+                    word_ids = word_ids.to(device)
+                    mask = mask.to(device)
+                    output = model(word_ids, attention_mask=mask)
+                    print(len(output))  # check if the hidden states are returned
+                    hidden_states = output[2]
+                    print(len(hidden_states))  # check the # of hidden layers. Should be 13
+                    hidden_states_torch = torch.stack(hidden_states)  # shape (13, 1000, sequence_length, hidden_size)
+                    print(hidden_states_torch.shape)  # confirm tensor shape
+                    outputs.append(hidden_states_torch)
+
+            output_tensor = torch.cat(outputs, dim=1).detach().cpu()  # concatenating the tensors along the batch_size
+            print(output_tensor.shape)  # confirm tensor shape
+            torch.save(output_tensor, load_path)
+
+        return output_tensor
+
     
     def get_bert_embeddings(self,load_option='save'):
 
