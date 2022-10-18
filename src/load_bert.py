@@ -49,11 +49,11 @@ class DataProcessing:
         self.tokens = tokens
         return self.tokens
 
-    def get_layerwise_embeddings(self, layer, load_option='save'):
+    def get_layerwise_embeddings(self, load_option='save'):
         """
             basically the same thing as get_bert_embedding, except returning the hidden states
         """
-        load_path = '../data/pmb_'+self.standard+'/'+self.standard+'_'+self.dset+'_'+layer+'_emb.pt'
+        load_path = '../data/pmb_'+self.standard+'/'+self.standard+'_'+self.dset+'_layerwise_emb.pt'
 
         if load_option == 'load':
             output_tensor = torch.load(load_path)
@@ -80,7 +80,7 @@ class DataProcessing:
                     print(len(output))  # check if the hidden states are returned
                     hidden_states = output[2]
                     print(len(hidden_states))  # check the # of hidden layers. Should be 13
-                    hidden_states_torch = torch.stack(hidden_states)  # shape (13, 1000, sequence_length, hidden_size)
+                    hidden_states_torch = torch.stack(hidden_states)  # shape (13, 1000, sequence_length, 768)
                     print(hidden_states_torch.shape)  # confirm tensor shape
                     outputs.append(hidden_states_torch)
 
