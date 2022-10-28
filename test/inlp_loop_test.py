@@ -2,7 +2,7 @@
 
 import torch
 from sklearn.metrics import accuracy_score
-from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
+from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 import scipy
 import random
